@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presensi &amp; Perizinan Siswa Kelas 9</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React 18 & ReactDOM 18 UMD CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel Standalone CDN for JSX translation in browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* Custom scrollbar and animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-anim {
+      animation: fadeIn 0.15s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans selection:bg-indigo-500 selection:text-white">
+  <div id="root"></div>
+
+  <!-- MAIN REACT APPLICATION CODE -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef, Component } = React;
+
+    // ==========================================
+    // INLINE SVG ICONS (NO EXTERNAL IMPORT NEEDED)
+    // ==========================================
+    const Icon = ({ path, className = "w-4 h-4", fill = "none" }) => (
+      <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill={fill}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {path}
+      </svg>
+    );
+
+    const GraduationCap = ({ className = "w-5 h-5" }) => (
+      <Icon className={className} path={<><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></>} />
+    );
+    const Calendar = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></>} />
+    );
+    const Camera = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>} />
+    );
+    const CheckCircle2 = ({ className = "w-5 h-5" }) => (
+      <Icon className={className} path={<><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></>} />
+    );
+    const AlertTriangle = ({ className = "w-5 h-5" }) => (
+      <Icon className={className} path={<><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></>} />
+    );
+    const XCircle = ({ className = "w-5 h-5" }) => (
+      <Icon className={className} path={<><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></>} />
+    );
+    const FileSpreadsheet = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></>} />
+    );
+    const Lock = ({ className = "w-5 h-5" }) => (
+      <Icon className={className} path={<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>} />
+    );
+    const Search = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></>} />
+    );
+    const RefreshCw = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></>} />
+    );
+    const Shield = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>} />
+    );
+    const LogOut = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></>} />
+    );
+    const ChevronLeft = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<polyline points="15 18 9 12 15 6"/>} />
+    );
+    const ChevronRight = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<polyline points="9 18 15 12 9 6"/>} />
+    );
+    const ChevronDown = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<polyline points="6 9 12 15 18 9"/>} />
+    );
+    const User = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />
+    );
+    const MessageCircle = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>} />
+    );
+    const UploadCloud = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><path d="m4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></>} />
+    );
+    const FileText = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></>} />
+    );
+    const Info = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></>} />
+    );
+    const Check = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<polyline points="20 6 9 17 4 12"/>} />
+    );
+    const X = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></>} />
+    );
+    const Eye = ({ className = "w-3.5 h-3.5" }) => (
+      <Icon className={className} path={<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>} />
+    );
+    const Trash2 = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></>} />
+    );
+    const Smartphone = ({ className = "w-3.5 h-3.5" }) => (
+      <Icon className={className} path={<><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></>} />
+    );
+    const Edit3 = ({ className = "w-3.5 h-3.5" }) => (
+      <Icon className={className} path={<><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></>} />
+    );
+    const ImageIcon = ({ className = "w-4 h-4" }) => (
+      <Icon className={className} path={<><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></>} />
+    );
+
+    // ==========================================
+    // CONSTANTS & 130 MASTER STUDENTS (9A-9E)
+    // ==========================================
+    const WHATSAPP_LINK = "https://wa.me/6287751902342";
+    const ADMIN_PASSWORD = "admin#123$";
+    const STORAGE_KEY = "presensi_siswa_standalone_v1";
+    const ADMIN_SESSION_KEY = "presensi_admin_auth_v1";
+
+    const MASTER_STUDENTS = [
+      // 9A (26 Siswa)
+      { id: "9A-01", nis: "230901", name: "Achmad Fauzan Ramadhan", classGrade: "9A", gender: "L" },
+      { id: "9A-02", nis: "230902", name: "Adelia Putri Kusuma", classGrade: "9A", gender: "P" },
+      { id: "9A-03", nis: "230903", name: "Agung Pratama Putra", classGrade: "9A", gender: "L" },
+      { id: "9A-04", nis: "230904", name: "Aisyah Nur Salsabila", classGrade: "9A", gender: "P" },
+      { id: "9A-05", nis: "230905", name: "Alif Hidayatullah", classGrade: "9A", gender: "L" },
+      { id: "9A-06", nis: "230906", name: "Anisa Rahmawati", classGrade: "9A", gender: "P" },
+      { id: "9A-07", nis: "230907", name: "Arya Bima Sena", classGrade: "9A", gender: "L" },
+      { id: "9A-08", nis: "230908", name: "Bagus Tri Wicaksono", classGrade: "9A", gender: "L" },
+      { id: "9A-09", nis: "230909", name: "Cantika Dwi Lestari", classGrade: "9A", gender: "P" },
+      { id: "9A-10", nis: "230910", name: "Daffa Ibnu Hafizh", classGrade: "9A", gender: "L" },
+      { id: "9A-11", nis: "230911", name: "Dina Kartika Sari", classGrade: "9A", gender: "P" },
+      { id: "9A-12", nis: "230912", name: "Fajar Kurniawan", classGrade: "9A", gender: "L" },
+      { id: "9A-13", nis: "230913", name: "Fatimah Azzahra", classGrade: "9A", gender: "P" },
+      { id: "9A-14", nis: "230914", name: "Galang Aditya Pratama", classGrade: "9A", gender: "L" },
+      { id: "9A-15", nis: "230915", name: "Hafiz Ridho Illahi", classGrade: "9A", gender: "L" },
+      { id: "9A-16", nis: "230916", name: "Indah Permata Sari", classGrade: "9A", gender: "P" },
+      { id: "9A-17", nis: "230917", name: "Kevin Chandra Wijaya", classGrade: "9A", gender: "L" },
+      { id: "9A-18", nis: "230918", name: "Larasati Dewi", classGrade: "9A", gender: "P" },
+      { id: "9A-19", nis: "230919", name: "Muhammad Rizky Maulana", classGrade: "9A", gender: "L" },
+      { id: "9A-20", nis: "230920", name: "Nabila Syifa Wardani", classGrade: "9A", gender: "P" },
+      { id: "9A-21", nis: "230921", name: "Putri Anggraini", classGrade: "9A", gender: "P" },
+      { id: "9A-22", nis: "230922", name: "Rafi Ahmad Firdaus", classGrade: "9A", gender: "L" },
+      { id: "9A-23", nis: "230923", name: "Siti Nurhaliza", classGrade: "9A", gender: "P" },
+      { id: "9A-24", nis: "230924", name: "Tio Sandi Pratama", classGrade: "9A", gender: "L" },
+      { id: "9A-25", nis: "230925", name: "Vina Melinda", classGrade: "9A", gender: "P" },
+      { id: "9A-26", nis: "230926", name: "Zidan Farhan Mubarak", classGrade: "9A", gender: "L" },
+
+      // 9B (26 Siswa)
+      { id: "9B-01", nis: "230927", name: "Aldi Wahyu Nugroho", classGrade: "9B", gender: "L" },
+      { id: "9B-02", nis: "230928", name: "Amanda Chelsea", classGrade: "9B", gender: "P" },
+      { id: "9B-03", nis: "230929", name: "Andi Saputra", classGrade: "9B", gender: "L" },
+      { id: "9B-04", nis: "230930", name: "Annisa Maharani", classGrade: "9B", gender: "P" },
+      { id: "9B-05", nis: "230931", name: "Bagus Hendrawan", classGrade: "9B", gender: "L" },
+      { id: "9B-06", nis: "230932", name: "Bunga Citra Lestari", classGrade: "9B", gender: "P" },
+      { id: "9B-07", nis: "230933", name: "Danang Pamungkas", classGrade: "9B", gender: "L" },
+      { id: "9B-08", nis: "230934", name: "Dewi Sekar Kinanti", classGrade: "9B", gender: "P" },
+      { id: "9B-09", nis: "230935", name: "Dimas Arya Pangestu", classGrade: "9B", gender: "L" },
+      { id: "9B-10", nis: "230936", name: "Elisa Triana", classGrade: "9B", gender: "P" },
+      { id: "9B-11", nis: "230937", name: "Fathir Maulana", classGrade: "9B", gender: "L" },
+      { id: "9B-12", nis: "230938", name: "Giska Amelia", classGrade: "9B", gender: "P" },
+      { id: "9B-13", nis: "230939", name: "Hendra Wijaya", classGrade: "9B", gender: "L" },
+      { id: "9B-14", nis: "230940", name: "Ika Nurjanah", classGrade: "9B", gender: "P" },
+      { id: "9B-15", nis: "230941", name: "Irfan Hakim", classGrade: "9B", gender: "L" },
+      { id: "9B-16", nis: "230942", name: "Jihan Farhana", classGrade: "9B", gender: "P" },
+      { id: "9B-17", nis: "230943", name: "Kenzo Alvaro", classGrade: "9B", gender: "L" },
+      { id: "9B-18", nis: "230944", name: "Maulida Nurul Aini", classGrade: "9B", gender: "P" },
+      { id: "9B-19", nis: "230945", name: "Naufal Ihsan Rabbani", classGrade: "9B", gender: "L" },
+      { id: "9B-20", nis: "230946", name: "Putra Sanjaya", classGrade: "9B", gender: "L" },
+      { id: "9B-21", nis: "230947", name: "Rania Bilqis", classGrade: "9B", gender: "P" },
+      { id: "9B-22", nis: "230948", name: "Rehan Bagaskara", classGrade: "9B", gender: "L" },
+      { id: "9B-23", nis: "230949", name: "Salwa Khairunnisa", classGrade: "9B", gender: "P" },
+      { id: "9B-24", nis: "230950", name: "Satria Dharma", classGrade: "9B", gender: "L" },
+      { id: "9B-25", nis: "230951", name: "Tiara Andini", classGrade: "9B", gender: "P" },
+      { id: "9B-26", nis: "230952", name: "Yusuf Habibie", classGrade: "9B", gender: "L" },
+
+      // 9C (26 Siswa)
+      { id: "9C-01", nis: "230953", name: "Adnan Malik Ibrahim", classGrade: "9C", gender: "L" },
+      { id: "9C-02", nis: "230954", name: "Almira Zahra", classGrade: "9C", gender: "P" },
+      { id: "9C-03", nis: "230955", name: "Bayu Aji Pamungkas", classGrade: "9C", gender: "L" },
+      { id: "9C-04", nis: "230956", name: "Bella Safira", classGrade: "9C", gender: "P" },
+      { id: "9C-05", nis: "230957", name: "Bima Arya Kusuma", classGrade: "9C", gender: "L" },
+      { id: "9C-06", nis: "230958", name: "Chelse Olivia", classGrade: "9C", gender: "P" },
+      { id: "9C-07", nis: "230959", name: "Denis Pratama", classGrade: "9C", gender: "L" },
+      { id: "9C-08", nis: "230960", name: "Dwi Ayu Novitasari", classGrade: "9C", gender: "P" },
+      { id: "9C-09", nis: "230961", name: "Eko Prasetyo", classGrade: "9C", gender: "L" },
+      { id: "9C-10", nis: "230962", name: "Farah Diba", classGrade: "9C", gender: "P" },
+      { id: "9C-11", nis: "230963", name: "Ghani Alamsyah", classGrade: "9C", gender: "L" },
+      { id: "9C-12", nis: "230964", name: "Hanifah Zahirah", classGrade: "9C", gender: "P" },
+      { id: "9C-13", nis: "230965", name: "Ilham Ramadhan", classGrade: "9C", gender: "L" },
+      { id: "9C-14", nis: "230966", name: "Intan Permadani", classGrade: "9C", gender: "P" },
+      { id: "9C-15", nis: "230967", name: "Joko Susilo", classGrade: "9C", gender: "L" },
+      { id: "9C-16", nis: "230968", name: "Kirana Putri", classGrade: "9C", gender: "P" },
+      { id: "9C-17", nis: "230969", name: "Lukman Hakim", classGrade: "9C", gender: "L" },
+      { id: "9C-18", nis: "230970", name: "Melati Kusuma", classGrade: "9C", gender: "P" },
+      { id: "9C-19", nis: "230971", name: "Naufal Hilmi", classGrade: "9C", gender: "L" },
+      { id: "9C-20", nis: "230972", name: "Nurul Hidayah", classGrade: "9C", gender: "P" },
+      { id: "9C-21", nis: "230973", name: "Panji Gumilang", classGrade: "9C", gender: "L" },
+      { id: "9C-22", nis: "230974", name: "Ratna Sari", classGrade: "9C", gender: "P" },
+      { id: "9C-23", nis: "230975", name: "Rizky Ramadhan", classGrade: "9C", gender: "L" },
+      { id: "9C-24", nis: "230976", name: "Salsabila Firdaus", classGrade: "9C", gender: "P" },
+      { id: "9C-25", nis: "230977", name: "Teguh Santoso", classGrade: "9C", gender: "L" },
+      { id: "9C-26", nis: "230978", name: "Wulan Dari", classGrade: "9C", gender: "P" },
+
+      // 9D (26 Siswa)
+      { id: "9D-01", nis: "230979", name: "Abdurrahman Wahid", classGrade: "9D", gender: "L" },
+      { id: "9D-02", nis: "230980", name: "Anindya Keisha", classGrade: "9D", gender: "P" },
+      { id: "9D-03", nis: "230981", name: "Bagus Setiawan", classGrade: "9D", gender: "L" },
+      { id: "9D-04", nis: "230982", name: "Chika Jessica", classGrade: "9D", gender: "P" },
+      { id: "9D-05", nis: "230983", name: "Danu Tirta", classGrade: "9D", gender: "L" },
+      { id: "9D-06", nis: "230984", name: "Dian Pelangi", classGrade: "9D", gender: "P" },
+      { id: "9D-07", nis: "230985", name: "Erlangga Putra", classGrade: "9D", gender: "L" },
+      { id: "9D-08", nis: "230986", name: "Febriana Santoso", classGrade: "9D", gender: "P" },
+      { id: "9D-09", nis: "230987", name: "Gilang Dirga", classGrade: "9D", gender: "L" },
+      { id: "9D-10", nis: "230988", name: "Hilda Amalia", classGrade: "9D", gender: "P" },
+      { id: "9D-11", nis: "230989", name: "Indra Lesmana", classGrade: "9D", gender: "L" },
+      { id: "9D-12", nis: "230990", name: "Jasmine Azzahra", classGrade: "9D", gender: "P" },
+      { id: "9D-13", nis: "230991", name: "Kurnia Sandi", classGrade: "9D", gender: "L" },
+      { id: "9D-14", nis: "230992", name: "Lia Agustina", classGrade: "9D", gender: "P" },
+      { id: "9D-15", nis: "230993", name: "Mario Teguh Pratama", classGrade: "9D", gender: "L" },
+      { id: "9D-16", nis: "230994", name: "Nadya Arina", classGrade: "9D", gender: "P" },
+      { id: "9D-17", nis: "230995", name: "Oki Setiawan", classGrade: "9D", gender: "L" },
+      { id: "9D-18", nis: "230996", name: "Prilly Latuconsina", classGrade: "9D", gender: "P" },
+      { id: "9D-19", nis: "230997", name: "Qori Al-Ghifari", classGrade: "9D", gender: "L" },
+      { id: "9D-20", nis: "230998", name: "Ririn Dwi Ariyanti", classGrade: "9D", gender: "P" },
+      { id: "9D-21", nis: "230999", name: "Septian Dwi Nugraha", classGrade: "9D", gender: "L" },
+      { id: "9D-22", nis: "231000", name: "Tania Putri", classGrade: "9D", gender: "P" },
+      { id: "9D-23", nis: "231001", name: "Umar Bakri", classGrade: "9D", gender: "L" },
+      { id: "9D-24", nis: "231002", name: "Vicky Prasetyo", classGrade: "9D", gender: "L" },
+      { id: "9D-25", nis: "231003", name: "Widya Astuti", classGrade: "9D", gender: "P" },
+      { id: "9D-26", nis: "231004", name: "Zaskia Gotik Kusuma", classGrade: "9D", gender: "P" },
+
+      // 9E (26 Siswa)
+      { id: "9E-01", nis: "231005", name: "Agil Saputra", classGrade: "9E", gender: "L" },
+      { id: "9E-02", nis: "231006", name: "Bella Shofie", classGrade: "9E", gender: "P" },
+      { id: "9E-03", nis: "231007", name: "Cakra Khania", classGrade: "9E", gender: "L" },
+      { id: "9E-04", nis: "231008", name: "Desi Ratnasari", classGrade: "9E", gender: "P" },
+      { id: "9E-05", nis: "231009", name: "Egi John Foreisythe", classGrade: "9E", gender: "L" },
+      { id: "9E-06", nis: "231010", name: "Fitri Carlina", classGrade: "9E", gender: "P" },
+      { id: "9E-07", nis: "231011", name: "Gading Marten", classGrade: "9E", gender: "L" },
+      { id: "9E-08", nis: "231012", name: "Hesti Purwadinata", classGrade: "9E", gender: "P" },
+      { id: "9E-09", nis: "231013", name: "Irfan Bachdim", classGrade: "9E", gender: "L" },
+      { id: "9E-10", nis: "231014", name: "Jessica Iskandar", classGrade: "9E", gender: "P" },
+      { id: "9E-11", nis: "231015", name: "Kaesang Pangarep", classGrade: "9E", gender: "L" },
+      { id: "9E-12", nis: "231016", name: "Luna Maya Lestari", classGrade: "9E", gender: "P" },
+      { id: "9E-13", nis: "231017", name: "Marcell Siahaan", classGrade: "9E", gender: "L" },
+      { id: "9E-14", nis: "231018", name: "Nikita Mirzani", classGrade: "9E", gender: "P" },
+      { id: "9E-15", nis: "231019", name: "Olla Ramlan", classGrade: "9E", gender: "P" },
+      { id: "9E-16", nis: "231020", name: "Pasha Ungu Putra", classGrade: "9E", gender: "L" },
+      { id: "9E-17", nis: "231021", name: "Raisa Andriana", classGrade: "9E", gender: "P" },
+      { id: "9E-18", nis: "231022", name: "Raffi Ahmad Dani", classGrade: "9E", gender: "L" },
+      { id: "9E-19", nis: "231023", name: "Syahrini Fatimah", classGrade: "9E", gender: "P" },
+      { id: "9E-20", nis: "231024", name: "Taufik Hidayat", classGrade: "9E", gender: "L" },
+      { id: "9E-21", nis: "231025", name: "Ussy Sulistiawaty", classGrade: "9E", gender: "P" },
+      { id: "9E-22", nis: "231026", name: "Vidi Aldiano", classGrade: "9E", gender: "L" },
+      { id: "9E-23", nis: "231027", name: "Wika Salim", classGrade: "9E", gender: "P" },
+      { id: "9E-24", nis: "231028", name: "Yovie Widianto", classGrade: "9E", gender: "L" },
+      { id: "9E-25", nis: "231029", name: "Zaskia Adya Mecca", classGrade: "9E", gender: "P" },
+      { id: "9E-26", nis: "231030", name: "Zai
